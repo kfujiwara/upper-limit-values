@@ -1,7 +1,7 @@
 ---
 title: Upper limit values for DNS
 abbrev: dns-upper-limit-values
-docname: draft-fujiwara-dnsop-dns-upper-limit-values-01
+docname: draft-fujiwara-dnsop-dns-upper-limit-values-02
 
 stand_alone: true
 
@@ -90,7 +90,7 @@ Introduction {#introduction}
 There are parameters in the DNS protocol that do not have clear upper limits.
 For example, the number of alias levels using CNAME Resource records,
 the number of name servers,
-the number of Resource Records in an RRSet,
+the number of resource records in an RRSet,
 the number of delegation levels using unrelated name server names,
 and the number of DNSKEYs for each domain name.
 
@@ -103,11 +103,7 @@ This draft proposes reasonable upper limits for DNS protocols.
 Terminology {#terminology}
 =========
 
-The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
-"SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
-"OPTIONAL" in this document are to be interpreted as described in 
-BCP14 {{!RFC2119}} {{!RFC8174}} when, and only when, they appear in all
-capitals, as shown here.
+{::boilerplate bcp14-tagged}
 
 Many of the specialized terms used in this document are defined in
 DNS Terminology {{!RFC9499}}.
@@ -119,7 +115,7 @@ There are parameters in the DNS protocol that do not have clear upper limits.
 For example, 
 the number of Resource Records in an RRSet,
 the number of alias levels using CNAME Resource records,
-the number of delegation levels using unrelated name server names.
+and the number of delegation levels using unrelated name server names.
 
 If a protocol is implemented without considering the upper limit,
 it may become vulnerable to DoS attacks.
@@ -127,21 +123,25 @@ In recent years, DNS vulnerabilities research have been actively  progressed
 and many vulnerabilities have been made public.
 Each time a vulnerability is discovered,
 upper limits on the execution time, number of attempts, and size
-are added to the implementation.
+are added to DNS software implementations.
 
-If we set upper limits for some parameters in advance and
+If we define upper limits for some parameters in advance and
 treat anything that exceeds them as an error,
 we can reduce the need to respond reactively.
 
-This draft proposes aggressive upper limits in order to advance discussions
-on determining upper limit values in DNS protocol.
+Authoritative servers are expected to enter an error state when they
+read zone files, receive zone transfers, or receive dynamic updates
+that contains RRsets that exceed the upper limit.
+Full-service resolvers can prevent malfunction by treating a name
+resolution error as responses from authoritative servers that exceed
+the upper limit.
 
 Recent upper limit values in implementations
 ------
 
 - Number of Resource Records in an RRSet
 
-  BIND 9 introduced 'max-records-per-type' parameter and the default is 100.
+  BIND 9 introduced 'max-records-per-type' parameter, and the default is 100.
 
   CVE-2024-1737 "BIND's database will be slow if a very large number of RRs
   exist at the same name" was reported and BIND 9.18.28 implemented the limit.
@@ -153,9 +153,17 @@ Recent upper limit values in implementations
   DNSKEY, DS, or RRSIG resource records.
 
   Unbound introduced the maximum number of RRSIG validations for an
-  RRset (MAX_VALIDATE_RRSIGS) as 8 and the maximum allowed digest
+  RRset (MAX_VALIDATE_RRSIGS) as 8, and the maximum allowed digest
   match failures per DS, for DNSKEYs with the same properties
   (MAX_DS_MATCH_FAILURES) as 4.
+
+- Number of alias levels using CNAME Resource records
+
+
+  Unbound and BIND 9 introduced 'max-query-restarts' parameter,
+  and the default is 11.
+  (Hard limit on the number of times
+   Unbound is allowed to restart a query upon encountering a CNAME record.)
 
 Possible upper limits
 =================
@@ -170,7 +178,7 @@ Possible upper limit items {#items}
 - Number of DNSKEY Resource Records in a DNSKEY RRSet
 - Number of RRSIG RRs for each name and type
 - Number of levels of unrelated only delegations
-- Number of CNAME/DNAME chains
+- Number of alias levels using CNAME Resource records
 
 Packet size limits
 ------
@@ -180,21 +188,33 @@ upper limit is set.
 
 The DNS packet format has an upper limit of 65535 octets,
 so an RRset cannot exceed that size.
-Attackers use this upper limit to carry out resource-wasting attacks.
+However, the size 65535 is large,
+attackers use this upper limit to carry out resource-wasting attacks.
 
-Also, the size of a single resource record is 65535 octets minus DNS
-header size because RDLENGTH is 16 bits.
+Also, the upper limit size of a single resource record is 65535 octets
+minus DNS header size because RDLENGTH is 16 bits.
+
+Section 4.2.1 UDP usage of {{!RFC1035}} limits the UDP message size 512.
 
 The size of a DNS response that can be sent using unfragmented UDP is
-about 1400 octets. {{?I-D.ietf-dnsop-avoid-fragmentation}}
+about 1400 octets. {{?RFC9715}}
 
 Upper limit concept
 ------
 
 Best Current Practice documents should allow for values
 that are currently in widespread use.
-
 However, obvious anomalies may be excluded.
+
+It is desirable to determine the upper limit values
+by conducting extensive measurements on the Internet
+and excluding obvious errors or malicious errors,
+and to set the value that has the least impact.
+
+For this reason, this document specifies desirable upper limit values
+and upper limit values that should result in an error if exceeded.
+
+Some of DNS RFCs define upper limit values.
 
 Number of Resource Records in a RRSet
 -------
@@ -206,14 +226,22 @@ Since there are 13 name servers for root, com, net
 and they have both IPv4 and IPv6 addresses,
 26 glue records in a delegation should be allowed.
 
+In recent years, there have been cases where
+many TXT resource records have been set at the zone apex.
+Many services seem to request their designated authentication tokens
+written as TXT records at the zone apex to verify domain name registrants.
+However, there seem to be cases where authentication tokens are only added,
+as there seems to be no procedure for deleting them once they have been set.
+It is necessary to standardize and disseminate
+{{?I-D.ietf-dnsop-domain-verification-techniques}},
+and to write TXT records not at the zone apex,
+but application-specific undercore prefix labels.
+
 Number of alias levels using CNAME/DNAME
 -------
 
 Many resolver implementations can resolve over 10 CNAME aliases.
-
-Unbound introduced 'max-query-restarts' parameter and the default is 11.
-(Hard limit on the number of times
- Unbound is allowed to restart a query upon encountering a CNAME record.)
+Unbound and BIND 9 introduced 'max-query-restarts' parameter and the default is 11.
 
 However,
 a stub resolver that receives a response containing multiple CNAME aliases
@@ -253,16 +281,36 @@ DNS hosting services.
 However, using unrelated name server names increases the name resolution costs
 and may increase the likelihood of name resolution errors.
 
+For some domain names, there are multiple layers of dependence
+on unrelated name server names when resolving the name.
+If information on unrelated name server names is not in the cache,
+such as immediately after the recursive resolver is started,
+the recursive resolver must perform A/AAAA name resolution
+for the unrelated name server names.
+If the name server for the domain name that holds the name server name
+also has only unrelated name server names,
+the resolver must also perform A/AAAA name resolution
+for those unrelated name server names.
+If the time required for name resolution exceeds one second,
+the stub resolver may treat the name resolution as having timed out,
+and users operating a browser, etc., may become impatient and reload the page.
+Even if the first name resolution takes too long,
+the A/AAAA RRs for the name server names are cached for each TTL time,
+so name resolution from the second time onwards can be performed
+in a short time and there is thought to be little actual harm,
+but if the TTL time expires,
+it will be necessary to start over with name resolution
+for the unrelated name server names,
+and the name resolution time will be extended again.
+Frequent use of unrelated name server names can cause unstable name resolution,
+such as a large difference between the time it takes to resolve a name
+and the time it takes to resolve a name,
+or sometimes the name resolution time is so long
+that it is treated as a timeout.
+
 This section proposes to use in-domain name servers as much as possible
 for name resolution of unrelated name server names
 to reduce the name resolution costs.
-
-Unrelated(out-of-bailiwick) name server names are required
-for DNS hosting services.
-However, using unrelated name server names increases the name resolution costs.
-For some domain names,
-there are multiple layers of dependence on unrelated name server names
-when resolving the name.
 
 Furthermore, there are cases where cyclic dependencies in delegation occur,
 settings that depend on sibling glue,
@@ -282,24 +330,43 @@ with at least one in-domain name server name.
 In other words, DNS providers SHOULD have at least one in-domain nameserver
 for their domain names.
 
-Possible upper limit items {#RecommendationResolver}
+From ICANN's Centralized Zone Data Service (CZDS), 
+an investigation into the dependencies of second-level domain names
+within the five largest TLDs (com, net, org, info, biz) revealed that
+less than 10% were unclassifiable (dependence on other TLDs or errors),
+around 0.3% were resolvable by in-domain name server names,
+64% were dependent on unrelated name server names at only the first level,
+26% were dependent on unrelated name server names at two levels,
+and less than 1% were dependent on unrelated name server names
+at three levels or more.
+
+Recommendation of DNS upper limit values {#RecommendationResolver}
 =================
 
-|Name                              | proposal   | current use | implementation |
-|----------------------------------+------------+------+--------------------
-| DNS message size (without PQC)   | <= 1400    |      | <= 1232 on UDP |
-| Number of Resource Records in a RRSet | <= 13 | ./com NS  | 100 (BIND) | 
-| Number of NS Resource Records in a delegation | <= 13 | ./com NS |   |
-| Number of glue RRs in a delegation | <= 26 | com glue |    |
-| Number of DS Resource Records in a delegation | <= 3 | need research |   |
-| Number of DNSKEY Resource Records in a DNSKEY RRSet | <= 6 | need research |   |
-| Number of RRSIG RRs for each name and type | <= 2 | need research | 8 (Unbound) |
-| Number of levels of unrelated only delegations | <= 2 | need research |  |
-| Number of CNAME/DNAME chains | <= 3 | 10 | 11 (Unbound) |
+| Name | Desirable upper limit | hard limit | protocol limit | implementation limit |
+|-----------------------+------------+--------+----------+----------------|
+| DNS message size      | 1400       |        | 65535    |                |
+| UDP/DNS message size (without EDNS) | | | 512    |                |
+| UDP/DNS message size (with EDNS) | 1400 (RFC9715) | | | 1232 (DNS Flag Day) |
+| number of RRs in a RRSet   | 13         |        |          | 100 (BIND 9)   |
+| number of NS RRs in a delegation | 13   | 13     |          | root/TLDs NS   |
+| number of glue RRs in a delegation | 26 | 26     |          | TLD glue       |
+| number of DS RRs in a delegation | 3    |        |          |                |
+| number of DNSKEY RRs        | 6         |        |          |                |
+| number of RRSIG RRs for each name and type | 2 | 8 | | 8 (Unbound) |
+| number of levels of unrelated only delegations | 1 |(2) | | |
+| number of CNAME/DNAME chains | 1 | 11 | | 11 (Unbound, BIND 9) |
 
-Recursive resolvers MAY respond with a name resolution error (Server Failure)
-if it receives a response from an authoritative server
-that exceeds these limits.
+DNS software is expected to make these items configurable parameters
+that operators can control .
+
+Recursive resolvers SHOULD respond with a name resolution error
+(Server Failure) if it receives a response from an authoritative
+server that exceeds the hard limits.
+
+Authoritative servers SHOULD treat in an error state if they find
+RRSets that exceed the hard limits when they load a zone file, receive
+zone data by zone transfers, or receive DNS Updates.
 
 IANA Considerations {#iana}
 ====================
