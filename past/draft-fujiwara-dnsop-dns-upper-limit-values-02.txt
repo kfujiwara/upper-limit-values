@@ -1,0 +1,560 @@
+
+
+
+
+Network Working Group                                        K. Fujiwara
+Internet-Draft                                                      JPRS
+Intended status: Best Current Practice                  28 February 2025
+Expires: 1 September 2025
+
+
+                       Upper limit values for DNS
+             draft-fujiwara-dnsop-dns-upper-limit-values-02
+
+Abstract
+
+   There are parameters in the DNS protocol that do not have clear upper
+   limit values.  If a protocol is implemented without considering the
+   upper limit, it may become vulnerable to DoS attacks, and several
+   attack methods have been proposed.  This draft proposes reasonable
+   upper limit values for DNS protocols.
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at https://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on 1 September 2025.
+
+Copyright Notice
+
+   Copyright (c) 2025 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents (https://trustee.ietf.org/
+   license-info) in effect on the date of publication of this document.
+   Please review these documents carefully, as they describe your rights
+   and restrictions with respect to this document.  Code Components
+   extracted from this document must include Revised BSD License text as
+   described in Section 4.e of the Trust Legal Provisions and are
+   provided without warranty as described in the Revised BSD License.
+
+
+
+
+Fujiwara                Expires 1 September 2025                [Page 1]
+
+Internet-Draft           dns-upper-limit-values            February 2025
+
+
+Table of Contents
+
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   2
+   2.  Terminology . . . . . . . . . . . . . . . . . . . . . . . . .   2
+   3.  Problem Statement . . . . . . . . . . . . . . . . . . . . . .   3
+     3.1.  Recent upper limit values in implementations  . . . . . .   3
+   4.  Possible upper limits . . . . . . . . . . . . . . . . . . . .   4
+     4.1.  Possible upper limit items  . . . . . . . . . . . . . . .   4
+     4.2.  Packet size limits  . . . . . . . . . . . . . . . . . . .   4
+     4.3.  Upper limit concept . . . . . . . . . . . . . . . . . . .   4
+     4.4.  Number of Resource Records in a RRSet . . . . . . . . . .   5
+     4.5.  Number of alias levels using CNAME/DNAME  . . . . . . . .   5
+     4.6.  Number of RRSIGs/DNSKEYs/DSs in a RRSet . . . . . . . . .   5
+     4.7.  Number of delegation levels using unrelated name server
+           names . . . . . . . . . . . . . . . . . . . . . . . . . .   6
+   5.  Recommendation of DNS upper limit values  . . . . . . . . . .   7
+   6.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .   8
+   7.  Security Considerations . . . . . . . . . . . . . . . . . . .   8
+   8.  References  . . . . . . . . . . . . . . . . . . . . . . . . .   8
+     8.1.  Normative References  . . . . . . . . . . . . . . . . . .   9
+     8.2.  Informative References  . . . . . . . . . . . . . . . . .   9
+   Author's Address  . . . . . . . . . . . . . . . . . . . . . . . .  10
+
+1.  Introduction
+
+   There are parameters in the DNS protocol that do not have clear upper
+   limits.  For example, the number of alias levels using CNAME Resource
+   records, the number of name servers, the number of resource records
+   in an RRSet, the number of delegation levels using unrelated name
+   server names, and the number of DNSKEYs for each domain name.
+
+   If a protocol is implemented without considering the upper limit, it
+   may become vulnerable to DoS attacks, and several attack methods have
+   been proposed.
+
+   This draft proposes reasonable upper limits for DNS protocols.
+
+2.  Terminology
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in
+   BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals, as shown here.
+
+   Many of the specialized terms used in this document are defined in
+   DNS Terminology [RFC9499].
+
+
+
+
+Fujiwara                Expires 1 September 2025                [Page 2]
+
+Internet-Draft           dns-upper-limit-values            February 2025
+
+
+3.  Problem Statement
+
+   There are parameters in the DNS protocol that do not have clear upper
+   limits.  For example, the number of Resource Records in an RRSet, the
+   number of alias levels using CNAME Resource records, and the number
+   of delegation levels using unrelated name server names.
+
+   If a protocol is implemented without considering the upper limit, it
+   may become vulnerable to DoS attacks.  In recent years, DNS
+   vulnerabilities research have been actively progressed and many
+   vulnerabilities have been made public.  Each time a vulnerability is
+   discovered, upper limits on the execution time, number of attempts,
+   and size are added to DNS software implementations.
+
+   If we define upper limits for some parameters in advance and treat
+   anything that exceeds them as an error, we can reduce the need to
+   respond reactively.
+
+   Authoritative servers are expected to enter an error state when they
+   read zone files, receive zone transfers, or receive dynamic updates
+   that contains RRsets that exceed the upper limit.  Full-service
+   resolvers can prevent malfunction by treating a name resolution error
+   as responses from authoritative servers that exceed the upper limit.
+
+3.1.  Recent upper limit values in implementations
+
+   *  Number of Resource Records in an RRSet
+
+      BIND 9 introduced 'max-records-per-type' parameter, and the
+      default is 100.
+
+      CVE-2024-1737 "BIND's database will be slow if a very large number
+      of RRs exist at the same name" was reported and BIND 9.18.28
+      implemented the limit.
+
+   *  Number of RRSIGs/DNSKEYs/DSs in a RRSet
+
+      KeyTrap [KeyTrap] is a vulnerability caused by the fact that there
+      is no upper limit on the number of DNSKEY, DS, or RRSIG resource
+      records.
+
+      Unbound introduced the maximum number of RRSIG validations for an
+      RRset (MAX_VALIDATE_RRSIGS) as 8, and the maximum allowed digest
+      match failures per DS, for DNSKEYs with the same properties
+      (MAX_DS_MATCH_FAILURES) as 4.
+
+   *  Number of alias levels using CNAME Resource records
+
+
+
+
+Fujiwara                Expires 1 September 2025                [Page 3]
+
+Internet-Draft           dns-upper-limit-values            February 2025
+
+
+      Unbound and BIND 9 introduced 'max-query-restarts' parameter, and
+      the default is 11.  (Hard limit on the number of times Unbound is
+      allowed to restart a query upon encountering a CNAME record.)
+
+4.  Possible upper limits
+
+4.1.  Possible upper limit items
+
+   *  Number of Resource Records in a RRSet
+
+   *  Number of NS Resource Records in a delegation
+
+   *  Number of DS Resource Records in a delegation
+
+   *  Number of glue RRs in a delegation
+
+   *  Number of DNSKEY Resource Records in a DNSKEY RRSet
+
+   *  Number of RRSIG RRs for each name and type
+
+   *  Number of levels of unrelated only delegations
+
+   *  Number of alias levels using CNAME Resource records
+
+4.2.  Packet size limits
+
+   There were comments that there are size limitations even if no
+   precise upper limits are set.
+
+   The DNS packet format has an upper limit of 65535 octets, so an RRset
+   cannot exceed that size.  However, the size 65535 is large, attackers
+   use this upper limit to carry out resource-wasting attacks.
+
+   Also, the upper limit size of a single resource record is 65535
+   octets minus DNS header size because RDLENGTH is 16 bits.
+
+   Section 4.2.1 UDP usage of [RFC1035] limits the UDP message size 512.
+
+   The size of a DNS response that can be sent using unfragmented UDP is
+   about 1400 octets.  [RFC9715]
+
+4.3.  Upper limit concept
+
+   Best Current Practice documents should allow for values that are
+   currently in widespread use.  However, apparent anomalies may be
+   excluded.
+
+
+
+
+
+Fujiwara                Expires 1 September 2025                [Page 4]
+
+Internet-Draft           dns-upper-limit-values            February 2025
+
+
+   It is desirable to determine the upper limit values by conducting
+   extensive measurements on the Internet and excluding obvious errors
+   or malicious errors, and to set the value that has the least impact.
+
+   For this reason, this document specifies desirable upper-limit values
+   and upper limit values that should result in an error if exceeded.
+
+   Some DNS RFCs define upper limit values.
+
+4.4.  Number of Resource Records in a RRSet
+
+   Since there are 13 root name servers and 13 name servers for com and
+   net TLDs, the maximum number of NS RR in an NS RRSet should be larger
+   than or equal to 13.
+
+   Since there are 13 name servers for root, com, net and they have both
+   IPv4 and IPv6 addresses, 26 glue records in a delegation should be
+   allowed.
+
+   In recent years, there have been cases where many TXT resource
+   records have been set at the zone apex.  Many services seem to
+   request their designated authentication tokens written as TXT records
+   at the zone apex to verify domain name registrants.  However, there
+   seem to be cases where authentication tokens are only added, as there
+   seems to be no procedure for deleting them once they have been set.
+   It is necessary to standardize and deploy
+   [I-D.ietf-dnsop-domain-verification-techniques], and to write TXT
+   records not at the zone apex, but application-specific undercore
+   prefix labels.
+
+4.5.  Number of alias levels using CNAME/DNAME
+
+   Many resolver implementations can resolve over 10 CNAME aliases.
+   Unbound and BIND 9 introduced 'max-query-restarts' parameter, and the
+   default is 11.
+
+   However, a stub resolver that receives a response containing multiple
+   CNAME aliases must find the final A, AAAA Resource record that
+   corresponds to the CNAME in each application.  To avoid this
+   complexity, the recommended number of CNAME chains is 1.  CNAME/DNAME
+   aliases with more than three levels are too complicated.
+
+4.6.  Number of RRSIGs/DNSKEYs/DSs in a RRSet
+
+   KeyTrap [KeyTrap] is a vulnerability caused by the fact that there is
+   no upper limit on the number of DNSKEY, DS, or RRSIG resource
+   records.  If there were upper limits on these, the damage could be
+   mitigated.
+
+
+
+Fujiwara                Expires 1 September 2025                [Page 5]
+
+Internet-Draft           dns-upper-limit-values            February 2025
+
+
+   Therefore, considering the DNSKEY rollover and the multi-signer
+   model, the maximum number of DNSKEYs for both KSK and ZSK may be 6.
+   The maximum number of DS RRs in a DS RRSet may be 3.
+
+   The number of RRSIG RRs for each owner name and type pair may be 6.
+
+   Unbound introduced the maximum number of RRSIG validations for an
+   RRset (MAX_VALIDATE_RRSIGS) as 8.
+
+4.7.  Number of delegation levels using unrelated name server names
+
+   [RFC9471] states that all in-domain glue records are attached to the
+   delegation response.  Therefore, using in-domain name server names
+   for DNS delegation minimizes name resolution costs.
+
+   Unrelated (or, rarely sibling) name server names are used/required
+   for DNS hosting services.
+
+   However, using unrelated name server names increases the name
+   resolution costs and may increase the likelihood of name resolution
+   errors.
+
+   For some domain names, there are multiple layers of dependence on
+   unrelated name server names when resolving the name.  If information
+   on unrelated name server names is not in the cache, such as
+   immediately after the recursive resolver is started, the recursive
+   resolver must perform A/AAAA name resolution for the unrelated name
+   server names.  If the name server for the domain name that holds the
+   name server name also has only unrelated name server names, the
+   resolver must also perform A/AAAA name resolution for those unrelated
+   name server names.  If the time required for name resolution exceeds
+   one second, the stub resolver may treat the name resolution as having
+   timed out, and users operating a browser, etc., may become impatient
+   and reload the page.  Even if the first name resolution takes too
+   long, the A/AAAA RRs for the name server names are cached for each
+   TTL time, so name resolution from the second time onwards can be
+   performed in a short time, and there is thought to be little actual
+   harm, but if the TTL time expires, it will be necessary to start over
+   with name resolution for the unrelated name server names, and the
+   name resolution time will be extended again.  Frequent use of
+   unrelated name server names can cause unstable name resolution, such
+   as a significant difference between the time it takes to resolve a
+   name and the time it takes to resolve a name, or sometimes the name
+   resolution time is so long that it is treated as a timeout.
+
+   This section proposes to use in-domain name servers as much as
+   possible for name resolution of unrelated name server names to reduce
+   the name resolution costs.
+
+
+
+Fujiwara                Expires 1 September 2025                [Page 6]
+
+Internet-Draft           dns-upper-limit-values            February 2025
+
+
+   Furthermore, there are cases where cyclic dependencies in delegation
+   occur, settings that depend on sibling glue, and cases where the
+   sibling glue disappears or some name servers stop responding, making
+   it impossible to resolve names.
+
+   [Tsuname2021] pointed out attacks and countermeasures that use
+   increased load due to cyclic dependencies.
+
+   Many cyclic delegations are likely due to misconfigurations.
+
+   To avoid complex name resolutions and misconfigurations, it is better
+   to avoid using unrelated name server names as much as possible.
+
+   Unrelated name server names SHOULD be hosted by a domain name with at
+   least one in-domain name server name.  In other words, DNS providers
+   SHOULD have at least one in-domain nameserver for their domain names.
+
+   From ICANN's Centralized Zone Data Service (CZDS), an investigation
+   into the dependencies of second-level domain names within the five
+   largest TLDs (com, net, org, info, biz) revealed that less than 10%
+   were unclassifiable (dependence on other TLDs or errors), around 0.3%
+   were resolvable by in-domain name server names, 64% were dependent on
+   unrelated name server names at only the first level, 26% were
+   dependent on unrelated name server names at two levels, and less than
+   1% were dependent on unrelated name server names at three levels or
+   more.
+
+   Therefore, if delegation using only unrelated name server names were
+   permitted up to two levels, name resolution would be successful for
+   99% of domain names.
+
+5.  Recommendation of DNS upper limit values
+
+   +==================+===========+=======+==========+================+
+   | Name             | Desirable | hard  | protocol | implementation |
+   |                  | upper     | limit | limit    | limit          |
+   |                  | limit     |       |          |                |
+   +==================+===========+=======+==========+================+
+   | DNS message size | 1400      |       | 65535    |                |
+   +------------------+-----------+-------+----------+----------------+
+   | UDP/DNS message  |           |       | 512      |                |
+   | size (without    |           |       |          |                |
+   | EDNS)            |           |       |          |                |
+   +------------------+-----------+-------+----------+----------------+
+   | UDP/DNS message  | 1400      |       |          | 1232 (DNS Flag |
+   | size (with EDNS) | (RFC9715) |       |          | Day)           |
+   +------------------+-----------+-------+----------+----------------+
+   | number of RRs in | 13        |       |          | 100 (BIND 9)   |
+
+
+
+Fujiwara                Expires 1 September 2025                [Page 7]
+
+Internet-Draft           dns-upper-limit-values            February 2025
+
+
+   | a RRSet          |           |       |          |                |
+   +------------------+-----------+-------+----------+----------------+
+   | number of NS RRs | 13        | 13    |          | root/TLDs NS   |
+   | in a delegation  |           |       |          |                |
+   +------------------+-----------+-------+----------+----------------+
+   | number of glue   | 26        | 26    |          | TLD glue       |
+   | RRs in a         |           |       |          |                |
+   | delegation       |           |       |          |                |
+   +------------------+-----------+-------+----------+----------------+
+   | number of DS RRs | 3         |       |          |                |
+   | in a delegation  |           |       |          |                |
+   +------------------+-----------+-------+----------+----------------+
+   | number of DNSKEY | 6         |       |          |                |
+   | RRs              |           |       |          |                |
+   +------------------+-----------+-------+----------+----------------+
+   | number of RRSIG  | 2         | 8     |          | 8 (Unbound)    |
+   | RRs for each     |           |       |          |                |
+   | name and type    |           |       |          |                |
+   +------------------+-----------+-------+----------+----------------+
+   | number of levels | 1         | (2)   |          |                |
+   | of unrelated     |           |       |          |                |
+   | only delegations |           |       |          |                |
+   +------------------+-----------+-------+----------+----------------+
+   | number of CNAME/ | 1         | 11    |          | 11 (Unbound,   |
+   | DNAME chains     |           |       |          | BIND 9)        |
+   +------------------+-----------+-------+----------+----------------+
+
+                                 Table 1
+
+   DNS software is expected to make these items configurable parameters
+   that operators can control.
+
+   Recursive resolvers SHOULD respond with a name resolution error
+   (Server Failure) if it receives a response from an authoritative
+   server that exceeds the hard limits.
+
+   Authoritative servers SHOULD be in an error state if they find RRSets
+   that exceed the hard limits when they load zone files, receive zone
+   data by zone transfers, or receive DNS Updates.
+
+6.  IANA Considerations
+
+   This document requests no IANA actions.
+
+7.  Security Considerations
+
+8.  References
+
+
+
+
+Fujiwara                Expires 1 September 2025                [Page 8]
+
+Internet-Draft           dns-upper-limit-values            February 2025
+
+
+8.1.  Normative References
+
+   [RFC1035]  Mockapetris, P., "Domain names - implementation and
+              specification", STD 13, RFC 1035, DOI 10.17487/RFC1035,
+              November 1987, <https://www.rfc-editor.org/rfc/rfc1035>.
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
+              <https://www.rfc-editor.org/rfc/rfc2119>.
+
+   [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
+              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
+              May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
+
+   [RFC9471]  Andrews, M., Huque, S., Wouters, P., and D. Wessels, "DNS
+              Glue Requirements in Referral Responses", RFC 9471,
+              DOI 10.17487/RFC9471, September 2023,
+              <https://www.rfc-editor.org/rfc/rfc9471>.
+
+   [RFC9499]  Hoffman, P. and K. Fujiwara, "DNS Terminology", BCP 219,
+              RFC 9499, DOI 10.17487/RFC9499, March 2024,
+              <https://www.rfc-editor.org/rfc/rfc9499>.
+
+8.2.  Informative References
+
+   [I-D.ietf-dnsop-domain-verification-techniques]
+              Sahib, S. K., Huque, S., Wouters, P., and E. Nygren,
+              "Domain Control Validation using DNS", Work in Progress,
+              Internet-Draft, draft-ietf-dnsop-domain-verification-
+              techniques-06, 21 October 2024,
+              <https://datatracker.ietf.org/doc/html/draft-ietf-dnsop-
+              domain-verification-techniques-06>.
+
+   [KeyTrap]  Elias Heftrig, Haya Schulmann, Niklas Vogel, and Michael
+              Waidner, "The KeyTrap Denial-of-Service Algorithmic
+              Complexity Attacks on DNS", 2024.
+
+   [RFC9715]  Fujiwara, K. and P. Vixie, "IP Fragmentation Avoidance in
+              DNS over UDP", RFC 9715, DOI 10.17487/RFC9715, January
+              2025, <https://www.rfc-editor.org/rfc/rfc9715>.
+
+   [Tsuname2021]
+              Moura, G. M., Sebastian Castro, John S Heidemann, and Wes
+              Hardaker, "TsuNAME: exploiting misconfiguration and
+              vulnerability to DDoS DNS", IMC '21: Proceedings of the
+              21st ACM Internet Measurement Conference , 2021.
+
+
+
+
+Fujiwara                Expires 1 September 2025                [Page 9]
+
+Internet-Draft           dns-upper-limit-values            February 2025
+
+
+Author's Address
+
+   Kazunori Fujiwara
+   Japan Registry Services Co., Ltd.
+   Japan
+   Email: fujiwara@wide.ad.jp
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Fujiwara                Expires 1 September 2025               [Page 10]
