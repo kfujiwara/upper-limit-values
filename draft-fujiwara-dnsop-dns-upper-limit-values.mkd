@@ -26,6 +26,13 @@ author:
     abbrev: JPRS
     email: fujiwara@wide.ad.jp
     country: Japan
+  -
+    ins: Y. Thessalonikefs
+    name: Yorgos Thessalonikefs
+    org: NLnet Labs
+    abbrev: NLnet Labs
+    email: yorgos@nlnetlabs.nl
+    country: Netherlands
 
 normative:
 
