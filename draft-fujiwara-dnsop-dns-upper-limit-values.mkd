@@ -73,6 +73,34 @@ informative:
         org:  Fraunhofer SIT
     date: 2024
 
+  NSEC3Vulnerability:
+    title: "NSEC3 closest encloser proof can exhaust CPU (CVE-2023-50868)"
+    target: "https://www.isc.org/blogs/2024-bind-security-release/#nsec3-closest-encloser-proof-can-exhaust-cpu-cve-2023-50868"
+    author:
+      -
+        ins: Petr Špaček
+        name: Petr Špaček
+        org: ISC
+    date: 2024
+
+  NXNS:
+    title: "NXNS Attack: Recursive DNS Inefficiencies and Vulnerabilities"
+    target: "https://dl.acm.org/doi/10.5555/3489212.3489248"
+    author:
+      -
+        ins: Yehuda Afek
+        name: Yehuda Afek
+        org: Tel Aviv University
+      -
+        ins: Lior Shafir
+        name: Lior Shafir
+        org: Tel Aviv University
+      -
+        ins: Anat Bremler-Barr
+        name: Anat Bremler-Barr
+        org: The Interdisciplinary Center
+    date: 2020
+
   Mockapetris1988:
     title: "Development of the domain name system"
     author:
@@ -96,13 +124,18 @@ informative:
        name: Daniel Julius Bernstein
        org: University of ILLINOIS CHICAGO
 
+  flagday2020:
+    title: "DNS Flag Day 2020"
+    target: "https://www.dnsflagday.net/2020/"
+    date: 2020
+
 --- abstract
 
 DNS was designed to have as few hard upper limits
 as possible to allow for future extensibility.
 However, the lack of a clear upper limit leads to vulnerabilities,
 and several attack methods have been reported.
-This document collects upper limit values implemented by DNS softwares
+This document collects upper limit values implemented by DNS software
 to avoid vulnerabilities.
 
 --- middle
@@ -112,7 +145,7 @@ Introduction {#introduction}
 
 DNS was designed to have as few upper limits
 as possible to allow for future extensibility
-described in 
+described in
 the paper "Development of the Domain Name System" {{Mockapetris1988}}.
 
 If a protocol is implemented without considering the upper limit,
@@ -157,6 +190,9 @@ Section 4.2.1 UDP usage of {{!RFC1035}} limits the UDP message size to 512.
 The size of a DNS response that can be sent using unfragmented UDP is
 about 1400 octets. {{?RFC9715}}
 
+{{flagday2020}} proposed 1232 octets and is used as the default value in most
+DNS software.
+
 DNS Response Rate Limiting
 --------
 
@@ -180,11 +216,8 @@ each stub resolver that receives a response containing multiple CNAME aliases
 must find the final A, AAAA Resource record
 that corresponds to the CNAME in each application.
 
-Unbound and BIND 9 introduced 'max-query-restarts' parameter,
-and the default is 11.
-(Hard limit on the number of times
-Unbound is allowed to restart a query upon encountering a CNAME record.)
-
+Unbound and BIND 9 introduced the 'max-query-restarts' parameter,
+and their default value is 11.
 
 Number of Resource Records in a RRSet
 -------
@@ -196,8 +229,16 @@ A large enterprise set 74 TXT records at its zone apex.
 
 CVE-2024-1737, "BIND's database will be slow if a very large number of RRs
 exist at the same name" was reported, and BIND 9.18.28 implemented the limit.
-BIND 9 introduced 'max-records-per-type' parameter
-that limits the number of resource records in an RRSet, and the default is 100.
+BIND 9 introduced the 'max-records-per-type' parameter
+that limits the number of resource records in an RRSet, and the default value
+is 100.
+
+Unbound has the 'iter-scrub-ns' parameter that limits the number of RRs
+explicitly for the NS RRSet and the default value is 20.
+
+Unbound has the 'iter-scrub-cname' parameter that limits the number of
+CNAME/DNAME records in an upstream reply by clipping off the remainder of
+the reply. The default value is 11.
 
 Number of NS records in a delegation
 --------
@@ -209,13 +250,51 @@ that can be registered for gTLDs and ccTLDs is 13.
 Number of RRSIGs/DNSKEYs/DSs in a RRSet
 -------
 
-[KeyTrap] is a vulnerability caused by the fact that
-there is no upper limit on the number of
-DNSKEY, DS, or RRSIG resource records.
-Unbound introduced the maximum number of RRSIG validations for an
+{{KeyTrap}} is a vulnerability caused by the fact that there is no upper limit
+on the number of DNSKEY, DS, or RRSIG resource records which could result in
+CPU exhaustion during DNSSSEC validation attempts.
+
+Unbound introduced, as hard-coded values, the maximum number of RRSIG
+validations for an
 RRset (MAX_VALIDATE_RRSIGS) as 8, and the maximum allowed digest
 match failures per DS, for DNSKEYs with the same properties
-(MAX_DS_MATCH_FAILURES) as 4.
+(MAX_DS_MATCH_FAILURES) as 8.
+
+Number of NSEC3 hash calculations
+-------
+
+{{NSEC3Vulnerability}} is a vulnerability that exploits the amount of
+NSEC3 hash iterations needed when proving negative responses which could result
+in CPU exhaustion during DNSSEC validation attempts.
+
+Unbound introduced, as a hard-coded value, the maximum number of NSEC3 hash
+calculations with a default value of 8.
+
+Number of outgoing queries per incoming query
+-------
+
+Unbound limits the number of outgoing queries per incoming query with
+the 'max-sent-count' parameter with a default value of 32.
+This counter is reset on query restarts (e.g., delagation points or
+CNAME/DNAME redirections).
+
+Unbound limits the number of outgoing queries per incoming query with
+the 'max-global-quota' parameter with a default value of 200.
+This counter is not reset on query restarts (e.g., delagation points or
+CNAME/DNAME redirections) and it persists on any internal subqueries spawned.
+
+Number of NS resolution queries
+-------
+
+Unbound limits the number of NS resolution queries needed per incoming query
+to a hard-coded value of 64.
+
+Unbound limits the number of NS resolution queries neeeded per delegation
+point to a hard-coded value of 16, in response to {{NXNS}}.
+
+Unbound limits the number of acceptable NXDOMAIN replies for NS queries
+(for a query and its subqueries) to a hard-coded value of 5 in response to {{NXNS}}.
+
 
 Number of delegation levels of glueless delegations
 -------
@@ -245,6 +324,9 @@ use increased load due to cyclic dependencies.
 Many cyclic delegations are likely due to misconfigurations.
 
 {{djbdns}} allows three levels of gluelessness.
+
+Unbound limits the maximum number of referral responses accepted per resolution
+attempt to a hard-coded value of 130.
 
 Discussions on future upper limits
 =====
