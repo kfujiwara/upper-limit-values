@@ -240,6 +240,10 @@ BIND 9 introduced the 'max-records-per-type' parameter
 that limits the number of resource records in an RRSet, and the default value
 is 100.
 
+BIND 9 also limits the maximum number of RR types
+that can be stored for an owner name with the 'max-types-per-name' parameter
+with the default value 100.
+
 Unbound has the 'iter-scrub-ns' parameter that limits the number of RRs
 explicitly for the NS RRSet and the default value is 20.
 
@@ -267,6 +271,15 @@ RRset (MAX_VALIDATE_RRSIGS) as 8, and the maximum allowed digest
 match failures per DS, for DNSKEYs with the same properties
 (MAX_DS_MATCH_FAILURES) as 8.
 
+BIND 9 limits the number of DNSSEC validations that can happen in a
+single fetch/processing a single cache miss with the
+'max-validations-per-fetch' parameter with the default value 16.
+
+BIND 9 limits the number of DNSSEC validation failures that can happen
+in a single fetch/single cache miss with the
+'max-validation-failures-per-fetch' parameter with the default value
+1.
+
 Number of NSEC3 hash calculations
 -------
 
@@ -289,6 +302,23 @@ Unbound limits the number of outgoing queries per incoming query with
 the 'max-global-quota' parameter with a default value of 200.
 This counter is not reset on query restarts (e.g., delagation points or
 CNAME/DNAME redirections) and it persists on any internal subqueries spawned.
+
+BIND 9 limits the number of iterative queries while servicing a single
+recursive query with the 'max-query-count' parameter with a default
+value of 200.
+
+BIND 9 limits the number of iterative queries while servicing a
+recursive query while looking up a single name
+with the 'max-recursion-queries' parameter with the default value 50.
+CNAME restarts this counter.
+
+BIND 9 limits the number of levels of recursion permitted at any one
+time while servicing a recursive query with the 'max-recursion-depth'
+parameter with the default value 7.
+
+BIND 9 limits the total deadline before giving up a single recursive
+query with the 'resolver-query-timeout' parameter with the default
+value 10 seconds.
 
 Number of NS resolution queries
 -------
