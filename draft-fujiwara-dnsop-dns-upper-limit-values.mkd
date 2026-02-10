@@ -1,7 +1,7 @@
 ---
 title: Upper limit values for DNS
 abbrev: dns-upper-limit-values
-docname: draft-fujiwara-dnsop-dns-upper-limit-values-04
+docname: draft-fujiwara-dnsop-dns-upper-limit-values-05
 
 stand_alone: true
 
@@ -385,5 +385,13 @@ This document requests no IANA actions.
 Security Considerations {#security}
 =====
 {:#securitycons}
+
+Acknowledgments
+=====
+
+The authors would like to thank discussions of dnsop WG.
+
+Thanks to Petr Špaček for providing the helpful comments
+from an implementor's perspective and the upper limits that BIND 9 implements.
 
 --- back
