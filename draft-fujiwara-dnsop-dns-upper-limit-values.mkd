@@ -136,6 +136,18 @@ informative:
     target: "https://www.dnsflagday.net/2020/"
     date: 2020
 
+  ReTrap:
+    title: "ReTrap: Multiple Novel Vulnerabilities to launch Algorithmic Complexity Attacks on DNSSEC"
+    author:
+      -
+        ins: Zuyao Xu
+        name: Zuyao Xu
+        org: Nankai University, AOSP Lab
+      -
+        ins: Xiang Li
+        name: Xiang Li
+        org: Nankai University, AOSP Lab
+
 --- abstract
 
 DNS was designed to have as few hard upper limits
@@ -251,6 +263,12 @@ Unbound has the 'iter-scrub-cname' parameter that limits the number of
 CNAME/DNAME records in an upstream reply by clipping off the remainder of
 the reply. The default value is 11.
 
+Unbound has a hard-coded value of 100 to limit the number of EDNS options
+to parse.
+
+Unbound has a hard-coded value of 24 to limit the number of RRSets to validate
+for QTYPE ANY replies.
+
 Number of NS records in a delegation
 --------
 
@@ -265,11 +283,28 @@ Number of RRSIGs/DNSKEYs/DSs in a RRSet
 on the number of DNSKEY, DS, or RRSIG resource records which could result in
 CPU exhaustion during DNSSSEC validation attempts.
 
+{{ReTrap}} is a follow up family of vulnerabilities that looked into yet
+limitless operations during DNSSEC validation that could lead to degradation of
+service as a result of heavy CPU usage.
+
 Unbound introduced, as hard-coded values, the maximum number of RRSIG
 validations for an
 RRset (MAX_VALIDATE_RRSIGS) as 8, and the maximum allowed digest
 match failures per DS, for DNSKEYs with the same properties
 (MAX_DS_MATCH_FAILURES) as 8.
+
+Unbound has the 'iter-scrub-rrsig' parameter that limits the number of RRSIGs
+per RRSet in an upstream reply by clipping off the remainder of the RRSIGs.
+The default value is 8.
+
+Unbound has the 'val-validation-attempts' parameter to limit the total number of
+RRSIG validation attempts per query with a default value of 32.
+
+Unbound has the 'val-hash-attempts' to limit the total number of
+DNSKEY hash attempts per query with a default value of 32.
+
+Unbound has a hard-coded value of 256 to limit the total number of matches
+for DNSKEY tags and algorithms
 
 BIND 9 limits the number of DNSSEC validations that can happen in a
 single fetch/processing a single cache miss with the
@@ -289,6 +324,13 @@ in CPU exhaustion during DNSSEC validation attempts.
 
 Unbound introduced, as a hard-coded value, the maximum number of NSEC3 hash
 calculations with a default value of 8.
+
+Length of NSEC3 salt
+-------
+
+In response to computational attacks, Unbound limits the length of an NSEC3
+salt to 64 with a hard-coded value.
+The current BCP is for the lenght to be 0.
 
 Number of outgoing queries per incoming query
 -------
