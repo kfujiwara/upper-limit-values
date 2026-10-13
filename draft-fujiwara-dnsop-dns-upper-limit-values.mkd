@@ -283,9 +283,9 @@ Number of RRSIGs/DNSKEYs/DSs in a RRSet
 on the number of DNSKEY, DS, or RRSIG resource records which could result in
 CPU exhaustion during DNSSSEC validation attempts.
 
-{{ReTrap}} is a follow up family of vulnerabilities that looked into yet
-limitless operations during DNSSEC validation that could lead to degradation of
-service as a result of heavy CPU usage.
+{{ReTrap}} is a follow-up family of vulnerabilities that lead to degradation of
+service as a result of heavy CPU usage from yet limitless operations during
+DNSSEC validation.
 
 Unbound introduced, as hard-coded values, the maximum number of RRSIG
 validations for an
@@ -330,7 +330,7 @@ Length of NSEC3 salt
 
 In response to computational attacks, Unbound limits the length of an NSEC3
 salt to 64 with a hard-coded value.
-The current BCP is for the lenght to be 0.
+The current BCP is for the length to be 0.
 
 Number of outgoing queries per incoming query
 -------

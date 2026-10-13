@@ -11,7 +11,7 @@
 - configuration: `max-query-restarts`
 - value        : `11`
 
-## Limit number of RRs in an NS RRSet
+## Limit the number of RRs in an NS RRSet
 - configuration: `iter-scrub-ns`
 - value        : `20`
 
@@ -20,7 +20,7 @@
 - configuration: `iter-scrub-cname`
 - value        : `11`
 
-## Limit number of RRSIGs per RRset in upstream reply
+## Limit the number of RRSIGs per RRset in upstream reply
 - configuration: `iter-scrub-rrsig`
 - value        : `8`
 
