@@ -1,7 +1,7 @@
 ---
 title: Upper limit values for DNS
 abbrev: dns-upper-limit-values
-docname: draft-fujiwara-dnsop-dns-upper-limit-values-05
+docname: draft-fujiwara-dnsop-dns-upper-limit-values-06
 
 stand_alone: true
 
