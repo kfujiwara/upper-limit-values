@@ -238,6 +238,24 @@ that corresponds to the CNAME in each application.
 Unbound and BIND 9 introduced the 'max-query-restarts' parameter,
 and their default value is 11.
 
+Number of pointer hops when decompressing
+-------
+
+DNS compression is used in some RR types to reduce the packet size.
+DNS software needs to follow decompression pointers to construct the final
+name.
+This could result in infinite loops or increased load when trying to
+decompress.
+
+Unbound has a hard-coded value of 256 for pointer hops when trying to
+decompress a name.
+
+Unbound has a hard-coded value of 2048 for the aggregate pointer hops for
+decompression per packet.
+
+Unbound has a hard-coded value of 128000 for the aggregate pointer hops for
+decompression per XFR packet.
+
 Number of Resource Records in a RRSet
 -------
 

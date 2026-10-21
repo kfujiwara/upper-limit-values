@@ -1,4 +1,4 @@
-# Unbound upper limits as of 1.26.1
+# Unbound upper limits as of 1.26.2
 
 ## EDNS buffer size
 - comment: Flag Day 2020
@@ -6,6 +6,18 @@
     - `edns-buffer-size`
     - `max-udp-size`
 - value        : `1232`
+
+## Decompression pointer limit per name
+- configuration: -
+- value        : `256`
+
+## Aggregate decompression pointer limit per packet
+- configuration: -
+- value        : `2048`
+
+## Aggregate decompression pointer limit per packet for XFR
+- configuration: -
+- value        : `128000`
 
 ## CNAME restarts
 - configuration: `max-query-restarts`
